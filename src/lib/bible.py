@@ -7,6 +7,10 @@
 #  Created     : 2025-12-13
 #  License     : MIT License
 # =====================================================
+import os
+import time
+
+import pandas
 from nltk.corpus import wordnet as wn
 from deep_translator import GoogleTranslator
 
@@ -16,9 +20,10 @@ from deep_translator import GoogleTranslator
 # nltk.download('omw-1.4')
 
 translator = GoogleTranslator(source='en', target='zh-CN')
+PROJ_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
 
-class Words(object):
+class Word(object):
     def __init__(self):
         pass
 
@@ -49,3 +54,32 @@ class Words(object):
                 "examples": syn.examples()
             })
         return results
+
+    @staticmethod
+    def get_bible_words():
+        """
+        功能：解析圣经全量的单词表
+        作者：GREGORY
+        修订：2025-12-14 GREGORY Created
+        :return: 字典：圣经全量单词表
+        """
+        excel = os.path.join(PROJ_ROOT, 'src/data', 'bible_words_full.xlsx')
+        df = pandas.read_excel(excel, sheet_name="Sheet1")
+        word_dict = df.set_index("word").to_dict(orient="index")
+        return word_dict
+
+    def gen_bible_words(self, words:dict):
+        """
+        功能：生成圣经全量的单词表，含词性、中文释义、英文释义
+        作者：GREGORY
+        修订：2025-12-14 GREGORY Created
+        :param words: dict 圣经全量单词表
+        :return: 0 success, 1 failure
+        """
+        time_str = time.strftime("%Y%m%d%H%M%S", time.localtime())
+        output = os.path.join(PROJ_ROOT, "output", f"bible_words_full_{time_str}")
+        print(output)
+        for w in words:
+            ans_list = self.get_word_definitions(w)
+            print(ans_list[-1])
+        return 0
