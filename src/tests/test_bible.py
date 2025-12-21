@@ -69,8 +69,8 @@ class TestWord(unittest.TestCase):
 
         print("Excel 写入完成")
 
-    def test_local_wordnet(self):
-        """单元测试：生成excel报表"""
+    def test_local_edict(self):
+        """单元测试：词典本地化"""
         pass
 
 
