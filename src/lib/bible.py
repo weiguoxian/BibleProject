@@ -76,10 +76,17 @@ class Word(object):
         :param words: dict 圣经全量单词表
         :return: 0 success, 1 failure
         """
+        meaning_words = {}
         time_str = time.strftime("%Y%m%d%H%M%S", time.localtime())
-        output = os.path.join(PROJ_ROOT, "output", f"bible_words_full_{time_str}")
+        output = os.path.join(PROJ_ROOT, "output", f"bible_words_full_{time_str}.xlsx")
         print(output)
-        for w in words:
-            ans_list = self.get_word_definitions(w)
-            print(ans_list[-1])
-        return 0
+        for k, v in words.items():
+            ans_list = self.get_word_definitions(k)
+            # 取首个释义
+            first_definition = ans_list[-1]
+            print(first_definition)
+            v["pos"] = first_definition["pos"]
+            v["definition_en"] = first_definition["definition_en"]
+            v["definition_zh"] = first_definition["definition_zh"]
+            meaning_words[k] = v
+        return meaning_words
