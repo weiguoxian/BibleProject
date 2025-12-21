@@ -28,6 +28,7 @@ class TestWord(unittest.TestCase):
         self.assertGreaterEqual(len(words), 10000)
 
     def test_gen_bible_words(self):
+        """单元测试：生成圣经单词"""
         word = Word()
         word_dict = {
             "cognitive": {
@@ -51,6 +52,7 @@ class TestWord(unittest.TestCase):
         self.assertGreaterEqual(ans, 0)
 
     def test_gen_excel_output(self):
+        """单元测试：生成excel报表"""
         # 1. 定义表头
         columns = ["word", "freq", "pos", "meaning"]
 
@@ -66,6 +68,11 @@ class TestWord(unittest.TestCase):
         df.to_excel(output, sheet_name="Sheet1", index=False)
 
         print("Excel 写入完成")
+
+    def test_local_wordnet(self):
+        """单元测试：生成excel报表"""
+        pass
+
 
 if __name__ == '__main__':
     unittest.main()
