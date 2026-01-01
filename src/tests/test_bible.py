@@ -49,29 +49,13 @@ class TestWord(unittest.TestCase):
             }
         }
         ans = word.gen_bible_words(word_dict)
-        self.assertGreaterEqual(ans, 0)
+        self.assertGreaterEqual(len(ans), 2)
 
-    def test_gen_excel_output(self):
+    def test_report_bible_words(self):
         """单元测试：生成excel报表"""
-        # 1. 定义表头
-        columns = ["word", "freq", "pos", "meaning"]
-
-        # 2. 行容器逐行追加数据
-        rows = [["love", 120, "noun", "爱"], ["faith", 95, "noun", "信心"], ["believe", 80, "verb", "相信"]]
-
-        # 4. 生成 DataFrame
-        df = pandas.DataFrame(rows, columns=columns)
-
-        # 5. 写入 Excel
-        time_str = time.strftime("%Y%m%d%H%M%S", time.localtime())
-        output = os.path.join(PROJ_ROOT, "output", f"bible_words_full_{time_str}.xlsx")
-        df.to_excel(output, sheet_name="Sheet1", index=False)
-
-        print("Excel 写入完成")
-
-    def test_local_edict(self):
-        """单元测试：词典本地化"""
-        pass
+        word = Word()
+        ans = word.report_bible_words()
+        self.assertGreaterEqual(ans, 0)
 
 
 if __name__ == '__main__':

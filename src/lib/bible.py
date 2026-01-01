@@ -13,6 +13,7 @@ import time
 import pandas
 from nltk.corpus import wordnet as wn
 from deep_translator import GoogleTranslator
+from src.lib import ecdict
 
 # 如果第一次使用，取消注释下载 WordNet
 # import nltk
@@ -55,8 +56,7 @@ class Word(object):
             })
         return results
 
-    @staticmethod
-    def get_bible_words():
+    def get_bible_words(self):
         """
         功能：解析圣经全量的单词表
         作者：GREGORY
@@ -65,7 +65,7 @@ class Word(object):
         """
         excel = os.path.join(PROJ_ROOT, 'src/data', 'bible_words_full.xlsx')
         df = pandas.read_excel(excel, sheet_name="Sheet1")
-        word_dict = df.set_index("word").to_dict(orient="index")
+        word_dict = df.set_index("tword").to_dict(orient="index")
         return word_dict
 
     def gen_bible_words(self, words:dict):
@@ -77,9 +77,6 @@ class Word(object):
         :return: 0 success, 1 failure
         """
         meaning_words = {}
-        time_str = time.strftime("%Y%m%d%H%M%S", time.localtime())
-        output = os.path.join(PROJ_ROOT, "output", f"bible_words_full_{time_str}.xlsx")
-        print(output)
         for k, v in words.items():
             ans_list = self.get_word_definitions(k)
             # 取首个释义
@@ -90,3 +87,43 @@ class Word(object):
             v["definition_zh"] = first_definition["definition_zh"]
             meaning_words[k] = v
         return meaning_words
+
+    def report_bible_words(self):
+        """
+        功能：生成圣经全量的单词报表
+        作者：GREGORY
+        修订：2026-01-01 GREGORY Created
+        :return: 0 success, 1 failure
+        """
+        # 1. 定义表头
+        columns = ["tword", "freq", "hold", "pos", "definition_en", "definition_zh", "bible_examples"]
+
+        origin_bible_words = self.get_bible_words()
+        word_ecdict = ecdict.load_ecdict(os.path.join(PROJ_ROOT, "src/data", "ecdict.csv"))
+
+        # 2. 行容器逐行追加数据
+        rows = []
+        for word_key, word_value in origin_bible_words.items():
+            pos = word_ecdict.get(word_key, {}).get("pos")
+            definition_en = word_ecdict.get(word_key, {}).get("definition")
+            definition_zh = word_ecdict.get(word_key, {}).get("translation")
+            rows.append([
+                word_key,
+                word_value["freq"],
+                word_value["hold"],
+                pos if pos else "ecdict查pos结果为空",
+                definition_en if definition_en else "ecdict查definition结果为空",
+                definition_zh if definition_zh else "ecdict查definition_zh结果为空",
+                word_value["bible_examples"]
+            ])
+
+        # 3. 生成 DataFrame
+        df = pandas.DataFrame(rows, columns=columns)
+
+        # 4. 写入 Excel
+        time_str = time.strftime("%Y%m%d%H%M%S", time.localtime())
+        output = os.path.join(PROJ_ROOT, "output", f"bible_words_full_{time_str}.xlsx")
+        df.to_excel(output, sheet_name="Sheet1", index=False)
+
+        print("Excel output finished")
+        return 0
