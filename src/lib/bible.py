@@ -11,6 +11,9 @@ import os
 import time
 
 import pandas
+import spacy
+from pathlib import Path
+from collections import defaultdict, Counter
 from nltk.corpus import wordnet as wn
 from deep_translator import GoogleTranslator
 from src.lib import ecdict
@@ -58,7 +61,7 @@ class Word(object):
 
     def get_bible_words(self):
         """
-        功能：解析圣经全量的单词表
+        功能：读取圣经全量的单词表
         作者：GREGORY
         修订：2025-12-14 GREGORY Created
         :return: 字典：圣经全量单词表
@@ -67,6 +70,49 @@ class Word(object):
         df = pandas.read_excel(excel, sheet_name="Sheet1")
         word_dict = df.set_index("tword").to_dict(orient="index")
         return word_dict
+
+    def parse_bible_words(self, txt_file):
+        """
+        功能：解析圣经全量的单词表
+        作者：GREGORY
+        修订：2026-01-03 GREGORY Created
+        :return: 字典：圣经全量单词表
+        :param txt_file: 圣经电子书绝对路径
+        :return: 字典：圣经全量单词表
+        """
+        # 1. 加载 spaCy 英文模型
+        nlp = spacy.load("en_core_web_sm", disable=["ner"])
+        nlp.max_length = 5_000_000
+
+        # 2. 读取圣经文本
+        txt_path = Path(txt_file)
+        text = txt_path.read_text(encoding="utf-8")
+
+        # 3. 解析圣经文本
+        word_freq = Counter()
+        example_sentence = {}
+        doc = nlp(text)
+        for sent in doc.sents:
+            sent_text = sent.text.strip()
+            print(sent_text)
+            for token in sent:
+                # 过滤条件
+                if not token.is_alpha:
+                    continue
+
+                lemma = token.lemma_.lower()
+
+                if lemma == "":
+                    continue
+
+                # 统计词频
+                word_freq[lemma] += 1
+
+                # 保存第一条例句
+                if lemma not in example_sentence:
+                    example_sentence[lemma] = sent_text
+        # 返回
+        return word_freq, example_sentence
 
     def gen_bible_words(self, words:dict):
         """
