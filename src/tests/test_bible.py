@@ -61,8 +61,9 @@ class TestWord(unittest.TestCase):
     def test_parse_bible_words(self):
         """单元测试：解析圣经全量单词表"""
         word = Word()
-        ans = word.parse_bible_words(os.path.join(PROJ_ROOT, "src/data", "NIV_Bible_Full_Text.txt"))
-        self.assertGreaterEqual(len(ans), 5000)
+        ans_freq, ans_example = word.parse_bible_words(os.path.join(PROJ_ROOT, "src/data", "NIV_Bible_Full_Text_Sample.txt"))
+        self.assertGreaterEqual(len(ans_freq), 500)
+        self.assertGreaterEqual(len(ans_example), 500)
 
 
 if __name__ == '__main__':

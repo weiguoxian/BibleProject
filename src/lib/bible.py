@@ -76,7 +76,6 @@ class Word(object):
         功能：解析圣经全量的单词表
         作者：GREGORY
         修订：2026-01-03 GREGORY Created
-        :return: 字典：圣经全量单词表
         :param txt_file: 圣经电子书绝对路径
         :return: 字典：圣经全量单词表
         """
@@ -114,6 +113,47 @@ class Word(object):
         # 返回
         return word_freq, example_sentence
 
+    def parse_bible_words_split(self, txt_file):
+        """
+        功能：解析圣经全量的单词表（切分文本方式）
+        作者：GREGORY
+        修订：2026-01-19 GREGORY Created
+        :param txt_file: 圣经电子书绝对路径
+        :return: 字典：圣经全量单词表
+        """
+        word_freq = Counter()
+        example_sentence = {}
+
+        nlp = spacy.load("en_core_web_sm", disable=["ner", "parser"])
+        nlp.enable_pipe("senter")
+
+        with open(txt_file, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+
+                doc = nlp(line)
+
+                for sent in doc.sents:
+                    sent_text = sent.text.strip()
+                    print(sent_text)
+                    for token in sent:
+                        if not token.is_alpha:
+                            continue
+
+                        lemma = token.lemma_.lower()
+                        if not lemma:
+                            continue
+
+                        word_freq[lemma] += 1
+
+                        if lemma not in example_sentence:
+                            example_sentence[lemma] = sent_text
+
+        return word_freq, example_sentence
+
+
     def gen_bible_words(self, words:dict):
         """
         功能：生成圣经全量的单词表，含词性、中文释义、英文释义
@@ -142,25 +182,25 @@ class Word(object):
         :return: 0 success, 1 failure
         """
         # 1. 定义表头
-        columns = ["tword", "freq", "hold", "pos", "definition_en", "definition_zh", "bible_examples"]
+        columns = ["tword", "freq", "hold", "definition_en", "definition_zh", "bible_example"]
 
-        origin_bible_words = self.get_bible_words()
+        txt_bible = os.path.join(PROJ_ROOT, "src/data", "NIV_Bible_Full_Text_Sample.txt")
+        word_freq, word_example = self.parse_bible_words(txt_bible)
         word_ecdict = ecdict.load_ecdict(os.path.join(PROJ_ROOT, "src/data", "ecdict.csv"))
 
         # 2. 行容器逐行追加数据
         rows = []
-        for word_key, word_value in origin_bible_words.items():
-            pos = word_ecdict.get(word_key, {}).get("pos")
-            definition_en = word_ecdict.get(word_key, {}).get("definition")
-            definition_zh = word_ecdict.get(word_key, {}).get("translation")
+        for tword, freq in word_freq.items():
+            pos = word_ecdict.get(tword, {}).get("pos")
+            definition_en = word_ecdict.get(tword, {}).get("definition")
+            definition_zh = word_ecdict.get(tword, {}).get("translation")
             rows.append([
-                word_key,
-                word_value["freq"],
-                word_value["hold"],
-                pos if pos else "ecdict查pos结果为空",
-                definition_en if definition_en else "ecdict查definition结果为空",
+                tword,
+                freq,
+                "",
+                definition_en if definition_en else "ecdict查definition_en结果为空",
                 definition_zh if definition_zh else "ecdict查definition_zh结果为空",
-                word_value["bible_examples"]
+                word_example[tword]
             ])
 
         # 3. 生成 DataFrame
