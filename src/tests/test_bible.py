@@ -51,12 +51,6 @@ class TestWord(unittest.TestCase):
         ans = word.gen_bible_words(word_dict)
         self.assertGreaterEqual(len(ans), 2)
 
-    def test_report_bible_words(self):
-        """单元测试：生成excel报表"""
-        word = Word()
-        ans = word.report_bible_words()
-        self.assertGreaterEqual(ans, 0)
-
 
     def test_parse_bible_words(self):
         """单元测试：解析圣经全量单词表"""
@@ -64,6 +58,12 @@ class TestWord(unittest.TestCase):
         ans_freq, ans_example = word.parse_bible_words(os.path.join(PROJ_ROOT, "src/data", "NIV_Bible_Full_Text_Sample.txt"))
         self.assertGreaterEqual(len(ans_freq), 500)
         self.assertGreaterEqual(len(ans_example), 500)
+
+    def test_report_bible_words(self):
+        """单元测试：生成excel报表"""
+        word = Word()
+        ans = word.report_bible_words(filename="NIV_Bible_Full_Text_Sample.txt")
+        self.assertEqual(ans, 0)
 
 
 if __name__ == '__main__':

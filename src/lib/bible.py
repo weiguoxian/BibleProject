@@ -13,7 +13,7 @@ import time
 import pandas
 import spacy
 from pathlib import Path
-from collections import defaultdict, Counter
+from collections import Counter
 from nltk.corpus import wordnet as wn
 from deep_translator import GoogleTranslator
 from src.lib import ecdict
@@ -37,6 +37,7 @@ class Word(object):
         功能：查询单词词性、英文释义、中文释义
         作者：GREGORY
         修订：2025-12-13 GREGORY Created
+             2026-01-24 GREGORY wordnet性能差
         :param word: 查询的单词
         :return: 单词释义列表，每个元素表示一个释义，含词性、英文释义、中文释义
         """
@@ -61,7 +62,7 @@ class Word(object):
 
     def get_bible_words(self):
         """
-        功能：读取圣经全量的单词表
+        功能：读取圣经全量的单词表，《bible_words_full.xlsx》由chatGPT提供，有单词勘误
         作者：GREGORY
         修订：2025-12-14 GREGORY Created
         :return: 字典：圣经全量单词表
@@ -115,7 +116,7 @@ class Word(object):
 
     def parse_bible_words_split(self, txt_file):
         """
-        功能：解析圣经全量的单词表（切分文本方式）
+        功能：解析圣经全量的单词表（切分文本方式），意在解决单次加载内存溢出问题
         作者：GREGORY
         修订：2026-01-19 GREGORY Created
         :param txt_file: 圣经电子书绝对路径
@@ -156,7 +157,7 @@ class Word(object):
 
     def gen_bible_words(self, words:dict):
         """
-        功能：生成圣经全量的单词表，含词性、中文释义、英文释义
+        功能：生成圣经全量的单词表，含词性、中文释义、英文释义，get_word_definitions性能差
         作者：GREGORY
         修订：2025-12-14 GREGORY Created
         :param words: dict 圣经全量单词表
@@ -174,24 +175,25 @@ class Word(object):
             meaning_words[k] = v
         return meaning_words
 
-    def report_bible_words(self):
+    def report_bible_words(self, filename:str):
         """
         功能：生成圣经全量的单词报表
         作者：GREGORY
         修订：2026-01-01 GREGORY Created
+        :param filename NIV_Bible_Full_Text.txt
         :return: 0 success, 1 failure
         """
         # 1. 定义表头
         columns = ["tword", "freq", "hold", "definition_en", "definition_zh", "bible_example"]
 
-        txt_bible = os.path.join(PROJ_ROOT, "src/data", "NIV_Bible_Full_Text_Sample.txt")
+        # 2. 数据加载
+        txt_bible = os.path.join(PROJ_ROOT, "src/data", filename)
         word_freq, word_example = self.parse_bible_words(txt_bible)
         word_ecdict = ecdict.load_ecdict(os.path.join(PROJ_ROOT, "src/data", "ecdict.csv"))
 
-        # 2. 行容器逐行追加数据
+        # 3. 行容器逐行追加数据
         rows = []
-        for tword, freq in word_freq.items():
-            pos = word_ecdict.get(tword, {}).get("pos")
+        for tword, freq in sorted(word_freq.items(), key=lambda kv: (kv[1], kv[0]), reverse=True):
             definition_en = word_ecdict.get(tword, {}).get("definition")
             definition_zh = word_ecdict.get(tword, {}).get("translation")
             rows.append([
@@ -203,13 +205,18 @@ class Word(object):
                 word_example[tword]
             ])
 
-        # 3. 生成 DataFrame
+        # 4. 生成DataFrame
         df = pandas.DataFrame(rows, columns=columns)
 
-        # 4. 写入 Excel
+        # 5. 写入Excel并保存
         time_str = time.strftime("%Y%m%d%H%M%S", time.localtime())
-        output = os.path.join(PROJ_ROOT, "output", f"bible_words_full_{time_str}.xlsx")
+        output = os.path.join(PROJ_ROOT, "output", f"{Path(filename).stem}_{time_str}.xlsx")
         df.to_excel(output, sheet_name="Sheet1", index=False)
 
-        print("Excel output finished")
+        print("\r\nExcel output successfully saved to {}\r\n".format(output))
         return 0
+
+
+if __name__ == '__main__':
+    word = Word()
+    word.report_bible_words(filename="NIV_Bible_Full_Text.txt")
