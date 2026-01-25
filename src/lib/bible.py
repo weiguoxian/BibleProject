@@ -81,17 +81,23 @@ class Word(object):
         :return: 字典：圣经全量单词表
         """
         # 1. 加载 spaCy 英文模型
+        print("spacy loading...")
         nlp = spacy.load("en_core_web_sm", disable=["ner"])
+        print("spacy loaded success!")
         nlp.max_length = 5_000_000
 
         # 2. 读取圣经文本
+        print("bible text loading...")
         txt_path = Path(txt_file)
         text = txt_path.read_text(encoding="utf-8")
+        print("bible text loaded success!")
 
         # 3. 解析圣经文本
         word_freq = Counter()
         example_sentence = {}
+        print("nlp loading...")
         doc = nlp(text)
+        print("nlp loaded success!")
         for sent in doc.sents:
             sent_text = sent.text.strip()
             print(sent_text)
@@ -180,30 +186,37 @@ class Word(object):
         功能：生成圣经全量的单词报表
         作者：GREGORY
         修订：2026-01-01 GREGORY Created
+             2026-01-25 GREGORY Add phonetic field
         :param filename NIV_Bible_Full_Text.txt
         :return: 0 success, 1 failure
         """
         # 1. 定义表头
-        columns = ["tword", "freq", "hold", "definition_en", "definition_zh", "bible_example"]
+        columns = ["no.", "tword", "freq", "hold", "phonetic", "definition_en", "definition_zh", "bible_example"]
 
         # 2. 数据加载
         txt_bible = os.path.join(PROJ_ROOT, "src/data", filename)
         word_freq, word_example = self.parse_bible_words(txt_bible)
+        print("ecdict loading...")
         word_ecdict = ecdict.load_ecdict(os.path.join(PROJ_ROOT, "src/data", "ecdict.csv"))
+        print("ecdict loaded success!")
 
         # 3. 行容器逐行追加数据
-        rows = []
+        rows, i = [], 1
         for tword, freq in sorted(word_freq.items(), key=lambda kv: (kv[1], kv[0]), reverse=True):
             definition_en = word_ecdict.get(tword, {}).get("definition")
             definition_zh = word_ecdict.get(tword, {}).get("translation")
+            phonetic = word_ecdict.get(tword, {}).get("phonetic")
             rows.append([
+                i,
                 tword,
                 freq,
                 "",
+                phonetic if definition_en else "ecdict查phonetic结果为空",
                 definition_en if definition_en else "ecdict查definition_en结果为空",
                 definition_zh if definition_zh else "ecdict查definition_zh结果为空",
                 word_example[tword]
             ])
+            i = i + 1
 
         # 4. 生成DataFrame
         df = pandas.DataFrame(rows, columns=columns)
