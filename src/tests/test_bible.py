@@ -28,6 +28,7 @@ class TestWord(unittest.TestCase):
         self.assertGreaterEqual(len(words), 10000)
 
     def test_gen_bible_words(self):
+        """单元测试：生成圣经单词"""
         word = Word()
         word_dict = {
             "cognitive": {
@@ -48,24 +49,22 @@ class TestWord(unittest.TestCase):
             }
         }
         ans = word.gen_bible_words(word_dict)
-        self.assertGreaterEqual(ans, 0)
+        self.assertGreaterEqual(len(ans), 2)
 
-    def test_gen_excel_output(self):
-        # 1. 定义表头
-        columns = ["word", "freq", "pos", "meaning"]
 
-        # 2. 行容器逐行追加数据
-        rows = [["love", 120, "noun", "爱"], ["faith", 95, "noun", "信心"], ["believe", 80, "verb", "相信"]]
+    def test_parse_bible_words(self):
+        """单元测试：解析圣经全量单词表"""
+        word = Word()
+        ans_freq, ans_example = word.parse_bible_words(os.path.join(PROJ_ROOT, "src/data", "NIV_Bible_Full_Text_Sample.txt"))
+        self.assertGreaterEqual(len(ans_freq), 500)
+        self.assertGreaterEqual(len(ans_example), 500)
 
-        # 4. 生成 DataFrame
-        df = pandas.DataFrame(rows, columns=columns)
+    def test_report_bible_words(self):
+        """单元测试：生成excel报表"""
+        word = Word()
+        ans = word.report_bible_words(filename="NIV_Bible_Full_Text_Sample.txt")
+        self.assertEqual(ans, 0)
 
-        # 5. 写入 Excel
-        time_str = time.strftime("%Y%m%d%H%M%S", time.localtime())
-        output = os.path.join(PROJ_ROOT, "output", f"bible_words_full_{time_str}.xlsx")
-        df.to_excel(output, sheet_name="Sheet1", index=False)
-
-        print("Excel 写入完成")
 
 if __name__ == '__main__':
     unittest.main()
